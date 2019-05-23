@@ -1,0 +1,78 @@
+for a fresh SD imgae with Raspian Strech light edition
+//	expand root file system not necessary on strech -- done automatically on first boot
+run raspi_config to get the time zone, local and keyborad correct
+login to user pi
+sudo su
+sudo apt-get update
+//sudo apt-get upgrade
+apt-get install git
+apt-get install cmake
+apt-get install vim  		## for color coded vi -- not strictly necessary
+apt-get install libusb-1.0  #needed to get libusb-1.0-0-dev for building  librtlsdr next
+## copy librtlsdr from git at https://github.com/jpoirier/librtlsdr to user/home directory 
+git clone https://github.com/jpoirier/librtlsdr 
+## follow instructions in README.md but use cmake ../ -DINSTALL_UDEV_RULES=ON instead of plain cmake
+## check that librtlsdr.so is in /usr/lical/lib/ amongst others
+## check that /etc/udev/rules.d has file rtl-sdr.rules
+exit su by Crtl D
+cd ~		// should be at /home/pi now 
+
+## install golang
+wget https://storage.googleapis.com/golang/go1.12.5.linux-armv6l.tar.gz		## takes a while , 101 Mb
+sudo tar -C /usr/local -xzf go1.12.5.linux-armv6l.tar.gz					## takes a while
+## edit ~/.bshrc to add the path for the go tools
+vi or nano -- add to end of file:
+ export PATH=$PATH:/usr/local/go/bin
+ export GOROOT="/usr/local/go"
+ export CGO_CFLAGS_ALLOW=-L/home/pi/stratux		## i.e. the directory where stratux sources are going to be
+logout - login to get new env vars set -- or source .bashrc
+git clone https://github.com/cyoung/stratux
+cd ~/stratux
+cp image/stxAliases.txt ~/			## use source stxAliases.txt from your home directory for some handy debug alieas 
+## wiringPi is rquired for fancontrol build target. However WiringPi no longers supports static linking and therefore fancontrol can not be built with
+## the WiringPi that is available from the provided github link.  -- Cyoung must have an old copy scrolled away that is not part of his github 
+## therefore comment out all instances of fancontrol in Makefile (5 instances) using vi or nano , cd ~/stratux ; vi Makefile 
+sudo service stratux stop		## should not be necessary on a fresh SD card, but needed should stratux be running already 
+make			## takes long! There are some messages about "No names found, cannot describe anything" --seems not to be an issue 
+				## takes about 10 minutes on Rpi3 -- No progress report on the main compile -- don't kill 
+
+sudo mkdir /var/www
+sudo chmod a+w /var/www
+make www
+make Install 
+
+## Configuring the WiFi acesspoint and DHCP server
+sudo apt-get install dnsmasq
+sudo apt-get install hostapd
+cd ~
+git clone https://github.com/garystofer/StratuxSDConfig
+copy all the files from folder StratuxSDConfig/etc to /etc -- i.e.:
+								/etc/dhcpcd.con, /etc/dnsmasq.conf, /etc/motd, /etc/hostapd/hostapd.conf,
+								/etc/networ/interfaces, /etc/default/hostapd, /etc/modprobe.d/rtl-sdr-blacklist.conf
+ 
+## start the wifi host access point 
+sudo systemctl unmask hostapd
+sudo systemctl enable hostapd
+sudo systemctl start hostapd
+edit with vi or nano the file /etc/rc.local and add the following before the line "exit 0" :
+	/usr/sbin/logrotate /etc/logrotate.conf
+sudo reboot	
+## check with tablet or phone that the WiFi accesspoint named SUXS_name appears and that the device can get an IP adress from the DHCP server  dnsmasq 
+## file /etc/hostapd/hostapd.conf holds the SSID and encrytion mode specifics of the accesspoint, change to your desire 
+
+
+
+## finally start the stratux service 
+sudo service stratux start
+sudo reboot
+
+## connect tablet and chek out the stratux web interface 
+Connect tablet to the WiFIi SSID of stratux -- It should say "Connected, no Internet"
+start a webbrowser and point it at http://192.168.10.1 -- the Startux web interface should come up 
+
+
+
+
+ 
+
+
