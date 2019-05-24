@@ -71,6 +71,15 @@ Connect tablet to the WiFIi SSID of stratux -- It should say "Connected, no Inte
 start a webbrowser and point it at http://192.168.10.1 -- the Startux web interface should come up 
 
 
+## on Pi3 and Pi ZeroW enable the UART to /dev/tyyAMA0 
+## disable the use of the hardware UART used by the BT device 
+sudo rasopi-config ## go to 5.) Interfacing options; then Serial and say No to Shell over serial and yes to Enable serial port
+cd /boot
+sudo vi config.txt ; add "dtoverlay=pi3-disable-bt" to end of file
+sudo systemctl disable hciuart
+sudo reboot
+
+
 
 
  
