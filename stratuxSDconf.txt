@@ -1,7 +1,16 @@
-for a fresh SD imgae with Raspian Strech light edition
-//	expand root file system not necessary on strech -- done automatically on first boot
-run raspi_config to get the time zone, local and keyborad correct
+## Manual script to install Stratux ADS-B sources, build tools and prereqs on a fresh Raspian Strech SD light edition image 
+## Tested with Stratux V1.5b2
+## I do this on a Rpi3 so I can use the hardwired ethernet connection for the downloads instead of first having to setup WiFi since that is going to be used as accesspoint by Stratux
+## I use a USB keyboard and a HDMI monitor instead of remote SSH 
+## after install and build the so prepared SD card can then be moved to a Rpi-Zero-W and it will run like on the Rpi3 
+## -- Only exception is a slight delay in the bootprocess becasue the Zero doesn't have a hardwired ethernet port and the dhcp client times out 
+
+
+
+##	expanding root file system is not necessary on strech -- done automatically on first boot
+
 login to user pi
+sudo raspi_config 	## to get the time zone, local and keyborad correct
 sudo su
 sudo apt-get update
 //sudo apt-get upgrade
@@ -57,10 +66,20 @@ sudo systemctl start hostapd
 edit with vi or nano the file /etc/rc.local and add the following before the line "exit 0" :
 	/usr/sbin/logrotate /etc/logrotate.conf
 sudo reboot	
+
 ## check with tablet or phone that the WiFi accesspoint named SUXS_name appears and that the device can get an IP adress from the DHCP server  dnsmasq 
 ## file /etc/hostapd/hostapd.conf holds the SSID and encrytion mode specifics of the accesspoint, change to your desire 
 
-
+## workaround for dnsmasq DHCP server used in Strech instead of isc-dhcp-server used in Jesse:
+sudo touch /var/lib/dhcp/dhcpd.leases	## create empty file -- so that v1.52b2 code doesnt abort scan for connected client
+sudo vi /etc/stratux-static-hosts.conf  ## add the IP address and name of your device that wants to connecting via the app interface at port 4000, i.e.
+										## If a different device needs to connect it's IP address and name has to be added to the file 
+										## assigned IP address and hostname cane be found in file /var/lib/misc/dnsmasq.leases
+## IP address - space - Hostname newline
+"
+192.168.10.12 Galaxy_Tab_A
+				
+"	
 
 ## finally start the stratux service 
 sudo service stratux start
@@ -71,7 +90,7 @@ Connect tablet to the WiFIi SSID of stratux -- It should say "Connected, no Inte
 start a webbrowser and point it at http://192.168.10.1 -- the Startux web interface should come up 
 
 
-## on Pi3 and Pi ZeroW enable the UART to /dev/tyyAMA0 
+## on Pi3 and Pi ZeroW enable the UART back to /dev/tyyAMA0 
 ## disable the use of the hardware UART used by the BT device 
 sudo rasopi-config ## go to 5.) Interfacing options; then Serial and say No to Shell over serial and yes to Enable serial port
 cd /boot
@@ -80,7 +99,17 @@ sudo systemctl disable hciuart
 sudo reboot
 
 
-
+## To limit the stratux.log file to a size not to exceed do the following
+sudo vi /etc/logrotate.d/stratux
+## add the following to the file:
+"
+/var/log/stratux.log {
+	rotate 2
+	size 100k
+}
+"
+## this rotates the log file 2 times as soon as the file size exeeds 100k -- Do this for other log files you whisch to keep small as well.
+## logrotate runs at startup and multiple times during the day but not often enough to immediatly truncate a file when size goes beyound
 
  
 
