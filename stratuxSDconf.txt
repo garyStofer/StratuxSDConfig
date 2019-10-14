@@ -1,7 +1,7 @@
 ## Manual script to install Stratux ADS-B sources, build tools and prereqs on a fresh Raspian Strech SD light edition image 
 ## Tested with Stratux V1.5b2
 ## I do this on a Rpi3 so I can use the hardwired ethernet connection for the downloads instead of first having to setup WiFi since that is going to be used as accesspoint by Stratux
-## I use a USB keyboard and a HDMI monitor instead of remote SSH 
+## I use a USB keyboard and a HDMI monitor instead of remote SSH,, If using SSH it must be first enabled via raspi-config
 ## after install and build the so prepared SD card can then be moved to a Rpi-Zero-W and it will run like on the Rpi3 
 ## -- Only exception is a slight delay in the bootprocess becasue the Zero doesn't have a hardwired ethernet port and the dhcp client times out 
 
@@ -74,7 +74,7 @@ sudo reboot
 sudo touch /var/lib/dhcp/dhcpd.leases	## create empty file -- so that v1.52b2 code doesnt abort scan for connected client
 sudo vi /etc/stratux-static-hosts.conf  ## add the IP address and name of your device that wants to connecting via the app interface at port 4000, i.e.
 										## If a different device needs to connect it's IP address and name has to be added to the file 
-										## assigned IP address and hostname cane be found in file /var/lib/misc/dnsmasq.leases
+										## assigned IP address and hostname can be found in file /var/lib/misc/dnsmasq.leases
 ## IP address - space - Hostname newline
 "
 192.168.10.12 Galaxy_Tab_A
@@ -85,12 +85,14 @@ sudo vi /etc/stratux-static-hosts.conf  ## add the IP address and name of your d
 sudo service stratux start
 sudo reboot
 
-## connect tablet and chek out the stratux web interface 
+## connect tablet and check out the stratux web interface 
+## the WiFi SSID of the device can be changed in the file /etc/hostpad/hostapd.conf
+
 Connect tablet to the WiFIi SSID of stratux -- It should say "Connected, no Internet"
 start a webbrowser and point it at http://192.168.10.1 -- the Startux web interface should come up 
 
 
-## on Pi3 and Pi ZeroW enable the UART back to /dev/tyyAMA0 
+## on Pi3 and Pi ZeroW enable the UART back to /dev/tyyAMA0  so it can be used by a RS232 GPS receiver
 ## disable the use of the hardware UART used by the BT device 
 sudo rasopi-config ## go to 5.) Interfacing options; then Serial and say No to Shell over serial and yes to Enable serial port
 cd /boot
@@ -110,6 +112,18 @@ sudo vi /etc/logrotate.d/stratux
 "
 ## this rotates the log file 2 times as soon as the file size exeeds 100k -- Do this for other log files you whisch to keep small as well.
 ## logrotate runs at startup and multiple times during the day but not often enough to immediatly truncate a file when size goes beyound
+
+## adding a shutdown switch to GPIO26, connect a switch between gpio and gnd to turn off and on the device gracefully
+#edit file /boot/config.txt to add the following
+dtoverlay=gpio-shutdown,gpio_pin=26 ## use the reset pins to restart the pi after shutdown or interrupt power to the device.
+## or
+dtoverlay=gpio-shutdown,gpio_pin=3 ## shutdown AND restart on GPIO03 
+dtoverlay=act_led_gpio=4		   ## reroutes the blinking led to GPIO04 for remote monitoring
+
+## see rest of config.txt in folder /boot
+
+
+
 
  
 
