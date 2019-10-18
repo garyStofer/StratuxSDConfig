@@ -1,9 +1,13 @@
 ## Manual script to install Stratux ADS-B sources, build tools and prereqs on a fresh Raspian Strech SD light edition image 
 ## Tested with Stratux V1.5b2
 ## I do this on a Rpi3 so I can use the hardwired ethernet connection for the downloads instead of first having to setup WiFi since that is going to be used as accesspoint by Stratux
-## I use a USB keyboard and a HDMI monitor instead of remote SSH,, If using SSH it must be first enabled via raspi-config
-## after install and build the so prepared SD card can then be moved to a Rpi-Zero-W and it will run like on the Rpi3 
+## I use a USB keyboard and a HDMI monitor instead of remote SSH, If using SSH it must be first enabled via raspi-config
+## after build the so prepared SD card can then be moved to a Rpi-Zero-W and it will run like on the Rpi3 
 ## -- Only exception is a slight delay in the bootprocess becasue the Zero doesn't have a hardwired ethernet port and the dhcp client times out 
+
+## HOWEVER:!!  The pi-zero-w is producing a lot more noise in the 118-136mhz range compared to the pi3. It seems to radiate from the USB connection as well as from 
+##             the UART cable. When connecting the SDR's via hub or USB cable the noise footprint is geting stronger.  I found it unusable in the airplane as the noise interference 
+##             blocks out com frequencies. For that reason I went back to a pi3 with wifi.
 
 
 
@@ -37,7 +41,9 @@ vi or nano -- add to end of file:
 logout - login to get new env vars set -- or source .bashrc
 git clone https://github.com/cyoung/stratux
 cd ~/stratux
-cp image/stxAliases.txt ~/			## use source stxAliases.txt from your home directory for some handy debug alieas 
+cp image/stxAliases.txt ~/			## use "source stxAliases.txt" from your home directory for some handy debug alieas 
+
+
 ## wiringPi is rquired for fancontrol build target. However WiringPi no longers supports static linking and therefore fancontrol can not be built with
 ## the WiringPi that is available from the provided github link.  -- Cyoung must have an old copy scrolled away that is not part of his github 
 ## therefore comment out all instances of fancontrol in Makefile (5 instances) using vi or nano , cd ~/stratux ; vi Makefile 
@@ -67,7 +73,7 @@ edit with vi or nano the file /etc/rc.local and add the following before the lin
 	/usr/sbin/logrotate /etc/logrotate.conf
 sudo reboot	
 
-## check with tablet or phone that the WiFi accesspoint named SUXS_name appears and that the device can get an IP adress from the DHCP server  dnsmasq 
+## check with tablet or phone that the WiFi accesspoint named Stratux appears and that the device can get an IP adress from the DHCP server  dnsmasq 
 ## file /etc/hostapd/hostapd.conf holds the SSID and encrytion mode specifics of the accesspoint, change to your desire 
 
 ## workaround for dnsmasq DHCP server used in Strech instead of isc-dhcp-server used in Jesse:
@@ -92,6 +98,7 @@ Connect tablet to the WiFIi SSID of stratux -- It should say "Connected, no Inte
 start a webbrowser and point it at http://192.168.10.1 -- the Startux web interface should come up 
 
 
+## in case of Serial GPS only:
 ## on Pi3 and Pi ZeroW enable the UART back to /dev/tyyAMA0  so it can be used by a RS232 GPS receiver
 ## disable the use of the hardware UART used by the BT device 
 sudo rasopi-config ## go to 5.) Interfacing options; then Serial and say No to Shell over serial and yes to Enable serial port
@@ -113,7 +120,7 @@ sudo vi /etc/logrotate.d/stratux
 ## this rotates the log file 2 times as soon as the file size exeeds 100k -- Do this for other log files you whisch to keep small as well.
 ## logrotate runs at startup and multiple times during the day but not often enough to immediatly truncate a file when size goes beyound
 
-## adding a shutdown switch to GPIO26, connect a switch between gpio and gnd to turn off and on the device gracefully
+## adding a shutdown switch to GPIO26, connect a switch between gpio and gnd to turn the device off  gracefully
 #edit file /boot/config.txt to add the following
 dtoverlay=gpio-shutdown,gpio_pin=26 ## use the reset pins to restart the pi after shutdown or interrupt power to the device.
 ## or
