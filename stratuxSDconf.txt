@@ -105,6 +105,8 @@ sudo rasopi-config ## go to 5.) Interfacing options; then Serial and say No to S
 cd /boot
 sudo vi config.txt ; add "dtoverlay=pi3-disable-bt" to end of file
 sudo systemctl disable hciuart
+sudo vi /boot/cmdline.txt
+Step 2:  Find the following text and remove it: console=tty0
 sudo reboot
 
 
@@ -126,6 +128,10 @@ dtoverlay=gpio-shutdown,gpio_pin=26 ## use the reset pins to restart the pi afte
 ## or
 dtoverlay=gpio-shutdown,gpio_pin=3 ## shutdown AND restart on GPIO03 
 dtoverlay=act_led_gpio=4		   ## reroutes the blinking led to GPIO04 for remote monitoring
+
+## to disable almost all logging to logfiles, do the following from the command line
+sudo service rsyslog stop
+sudo systemctl disable rsyslog
 
 ## see rest of config.txt in folder /boot
 
